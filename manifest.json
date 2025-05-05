@@ -1,0 +1,24 @@
+{
+    "manifest_version": 3,
+    "name": "Wildberries Reviews Analyzer",
+    "version": "1.0.0",
+    "description": "Анализирует отзывы на Wildberries и выводит агрегированную информацию",
+    "icons": {
+      "128": "icon.png"
+    },
+    "permissions": ["activeTab","storage","scripting","webRequest"],
+    "host_permissions": ["https://*.wb.ru/*","https://www.wildberries.ru/*"],
+    "content_scripts": [
+        {
+            "matches": ["https://www.wildberries.ru/catalog/*/detail.aspx*"],
+            "js": ["content.bundle.js"]
+        }
+    ],
+    "background": {
+      "service_worker": "background.bundle.js"
+    },
+    "action": {
+      "default_popup": "index.html"
+    }
+  }
+  
