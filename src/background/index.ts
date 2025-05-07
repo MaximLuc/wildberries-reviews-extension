@@ -1,6 +1,26 @@
 let lastProcessedUrl: string | null = null;
 let lastFetchedData: any = null;
 
+let injectedTabs = new Set<number>();
+
+chrome.webNavigation.onHistoryStateUpdated.addListener(({ tabId, url }) => {
+  if (url && /wildberries\.ru\/catalog\/\d+\/detail\.aspx/.test(url)) {
+    if (injectedTabs.has(tabId)) return; 
+
+    chrome.scripting.executeScript({
+      target: { tabId },
+      files: ["content.bundle.js"]
+    }).then(() => {
+      injectedTabs.add(tabId);
+      console.log("content.bundle.js вставлен через history update:", url);
+    }).catch((err) => {
+      console.warn("Ошибка при вставке скрипта:", err);
+    });
+  }
+}, {
+  url: [{ hostContains: "wildberries.ru" }]
+});
+
 chrome.webRequest.onCompleted.addListener(
   (details) => {
     if (details.url === lastProcessedUrl) {
@@ -35,8 +55,12 @@ chrome.webRequest.onCompleted.addListener(
   { urls: ["https://*.wb.ru/feedbacks/*"] }
 );
 
-chrome.tabs.onUpdated.addListener(() => {
-  lastProcessedUrl = null;
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.url && !/detail\.aspx/.test(changeInfo.url)) {
+    injectedTabs.delete(tabId); 
+    lastProcessedUrl = null;
+  }
 });
 chrome.tabs.onActivated.addListener(() => {
   lastProcessedUrl = null;
@@ -44,7 +68,7 @@ chrome.tabs.onActivated.addListener(() => {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'PROCESS_REVIEWS') {
-    console.log("📤 Отправляем отзывы на сервер:", request.data);
+    console.log("Отправляем отзывы на сервер:", request.data);
 
     fetch("http://localhost:8000/analyze/", {
       method: "POST",

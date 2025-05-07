@@ -417,19 +417,32 @@ function fillAnalysisData(data: any): void {
 
 
 function insertLoader() {
-  const target = document.querySelector(".product-page__user-activity");
-  if (!target) {
-    console.warn("Не найден целевой элемент для вставки блока");
-    return;
-  }
+  const maxWait = 7000;
+  const interval = 100;
+  let waited = 0;
 
-  const existing = document.getElementById(containerId);
-  if (existing) existing.remove();
+  const check = setInterval(() => {
+    const target = document.querySelector(".product-page__grid");
 
-  const loader = document.createElement("div");
-  loader.innerHTML = getTemplateHtml();
+    if (target) {
+      clearInterval(check);
 
-  target.prepend(loader);
+      const existing = document.getElementById(containerId);
+      if (existing) existing.remove();
+
+      const loader = document.createElement("div");
+      loader.innerHTML = getTemplateHtml();
+
+      target.insertAdjacentElement("afterend", loader);
+      console.log("Блок вставлен в .product-page__grid");
+    } else {
+      waited += interval;
+      if (waited >= maxWait) {
+        clearInterval(check);
+        console.warn("Не удалось найти .product-page__grid за 7 секунд");
+      }
+    }
+  }, interval);
 }
 
 
