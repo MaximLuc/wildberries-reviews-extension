@@ -4,42 +4,35 @@ let currentUrl = window.location.href;
 
 const containerId = "wb-feedback-analyzer";
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'REVIEWS_FROM_REQUEST') {
-    console.log('Отзывы из background script:', request.data);
+window.addEventListener("reviews-from-request", (e: any) => {
+  const data = e.detail;
 
-    const reviews = request.data.feedbacks.map((feedback: any) => ({
-      text: feedback.text,
-      pros: feedback.pros,
-      cons: feedback.cons,
-      productValuation: feedback.productValuation,
-      createdDate: feedback.createdDate,
-    }));
-
-
-    const stars = [0, 0, 0, 0, 0]; 
-
-    for (const review of reviews) {
-      const val = Math.round(review.productValuation);
-      if (val >= 1 && val <= 5) stars[val - 1]++;
-    }
-
-    console.log('Подготовленные отзывы:', reviews);
-    console.log('Подсчитанные звезды:', stars);
-
-    chrome.storage.local.set({ stars_distribution: stars });
-
-    chrome.runtime.sendMessage({ action: 'PROCESS_REVIEWS', data: reviews });
+  const reviews = data.feedbacks.map((feedback: any) => ({
+    text: feedback.text,
+    pros: feedback.pros,
+    cons: feedback.cons,
+    productValuation: feedback.productValuation,
+    createdDate: feedback.createdDate,
+  }));
+  console.log('fot server data')
+  const stars = [0, 0, 0, 0, 0];
+  for (const review of reviews) {
+    const val = Math.round(review.productValuation);
+    if (val >= 1 && val <= 5) stars[val - 1]++;
   }
 
-  if (request.action === 'RENDER_ANALYSIS') {
-    console.log("📊 Получен анализ, сохраняем в storage и отображаем");
+  chrome.storage.local.set({ stars_distribution: stars });
+  chrome.runtime.sendMessage({ action: 'PROCESS_REVIEWS', data: reviews });
+});
 
-    chrome.storage.local.set({ review_analysis_result: request.data }, () => {
-      insertLoader();
-      fillDataFromStorage();
-    });
-  }
+window.addEventListener("render-analysis", (e: any) => {
+  const result = e.detail;
+
+  console.log("Результаты анализа через событие:", result);
+
+  chrome.storage.local.set({ review_analysis_result: result }, () => {
+    fillDataFromStorage();
+  });
 });
 
 function getTemplateHtml(): string {
