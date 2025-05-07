@@ -36,34 +36,40 @@ window.addEventListener("render-analysis", (e: any) => {
 });
 
 function getTemplateHtml(): string {
-  return `
-    <div id="${containerId}">
-
+  return `<div id="${containerId}">
               <div class="wb-review-block">
-                  <style>
+                <div class="loading-spinner"></div>
+                <style>
                   @keyframes spinner {
                     to { transform: rotate(360deg); }
                   }
+
                   .loading-spinner {
-                    width: 24px;
-                    height: 24px;
-                    border: 4px solid rgba(255, 255, 255, 0.3);
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    width: 56px;
+                    height: 56px;
+                    border: 6px solid rgba(255, 255, 255, 0.3);
                     border-top-color: #fff;
                     border-radius: 50%;
                     animation: spinner 0.6s linear infinite;
-                    margin: 0 auto;
+                    z-index: 10;
                   }
+
                   .blur {
                     filter: blur(4px);
                     pointer-events: none;
                   }
+
                   .wb-review-block {
-                      margin: 20px auto;
-                      padding: 24px;
-                      background: linear-gradient(135deg, #7f00ff 0%, #e100ff 100%);
-                      border-radius: 12px;
-                      color: #fff;
-                      font-family: Arial, sans-serif;
+                    position: relative;
+                    margin: 20px auto;
+                    padding: 24px;
+                    background: linear-gradient(135deg, #7f00ff 0%, #e100ff 100%);
+                    border-radius: 12px;
+                    color: #fff;
+                    font-family: Arial, sans-serif;
                   }
                   .wb-review-header {
                       display: flex;
@@ -246,9 +252,8 @@ function getTemplateHtml(): string {
               
                   <div class="wb-review-content">
                   <div class="wb-top">
-                      <div class="wb-chart">
+                      <div class="wb-chart blur">
                       <h3>Общая статистика</h3>
-                      <div class="loading-spinner"></div>
                       <div class="chart-header blur">
                           <div class="donut-chart">
                           <svg width="140" height="140" viewBox="0 0 42 42">
@@ -301,7 +306,6 @@ function getTemplateHtml(): string {
                       </div>
                       <div class="wb-aspects blur">
                         <h3>Основные аспекты</h3>
-                        <div class="loading-spinner"></div>
                         <p>21% покупателей отмечают, что у товара «Хорошая доставка»</p>
                         <p>10% покупателей отмечают, что у товара «Приемлемая цена»</p>
                       </div>
