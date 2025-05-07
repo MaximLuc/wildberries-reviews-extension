@@ -22,7 +22,7 @@ chrome.webRequest.onCompleted.addListener(
           }
 
           const isProductPage = /wildberries\.ru\/catalog\/\d+\/detail\.aspx/.test(activeTab.url);
-
+          console.log("получение данных из fetch")
           if (!isProductPage) {
             console.warn("Пропущено: не страница товара Wildberries:", activeTab.url);
             return;
@@ -55,9 +55,36 @@ chrome.tabs.onActivated.addListener(() => {
 });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'PROCESS_REVIEWS') {
-      console.log("Получены отзывы для анализа:", request.data);
-  
-      // здесь будет отправка на Python-сервер
-    }
-  });
+  if (request.action === 'PROCESS_REVIEWS') {
+    console.log("Отправляем отзывы на сервер:", request.data);
+
+    fetch("http://localhost:8000/analyze/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request.data),
+    })
+      .then((res) => res.json())
+      .then((result) => {
+        console.log("✅ Ответ от сервера:", result);
+
+        chrome.storage.local.set({ review_analysis_result: result }, () => {
+          console.log("💾 Результаты сохранены в storage");
+        });
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs[0]?.id) {
+            chrome.tabs.sendMessage(tabs[0].id, {
+              action: "RENDER_ANALYSIS",
+              data: result,
+            });
+          }
+        });
+      })
+      .catch((err) => {
+        console.error("Ошибка при отправке на сервер:", err);
+      });
+
+    return true; 
+  }
+});

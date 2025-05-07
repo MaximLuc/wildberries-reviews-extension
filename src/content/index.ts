@@ -1,7 +1,17 @@
-// Это сработает сразу при загрузке контентного скрипта
 console.log("✅ Контентный скрипт загружен на страницу:", window.location.href);
 
-// Обработчик сообщений от background-скрипта
+let currentUrl = window.location.href;
+
+const observer = new MutationObserver(() => {
+  if (window.location.href !== currentUrl) {
+    currentUrl = window.location.href;
+    console.log("🔁 Обновлён URL, очистка storage");
+    chrome.storage.local.remove("review_analysis_result");
+  }
+});
+
+observer.observe(document.body, { childList: true, subtree: true });
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'REVIEWS_FROM_REQUEST') {
     console.log('📦 Отзывы из background script:', request.data);
@@ -14,7 +24,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       createdDate: feedback.createdDate,
     }));
 
-    console.log('📑 Подготовленные отзывы:', reviews);
+    console.log('Подготовленные отзывы:', reviews);
 
     chrome.runtime.sendMessage({ action: 'PROCESS_REVIEWS', data: reviews });
   }
