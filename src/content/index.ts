@@ -55,7 +55,6 @@ function getTemplateHtml(): string {
                     pointer-events: none;
                   }
                   .wb-review-block {
-                      max-width: 900px;
                       margin: 20px auto;
                       padding: 24px;
                       background: linear-gradient(135deg, #7f00ff 0%, #e100ff 100%);
