@@ -16,14 +16,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       createdDate: feedback.createdDate,
     }));
 
+
+    const stars = [0, 0, 0, 0, 0]; 
+
+    for (const review of reviews) {
+      const val = Math.round(review.productValuation);
+      if (val >= 1 && val <= 5) stars[val - 1]++;
+    }
+
     console.log('Подготовленные отзывы:', reviews);
+    console.log('Подсчитанные звезды:', stars);
+
+    chrome.storage.local.set({ stars_distribution: stars });
 
     chrome.runtime.sendMessage({ action: 'PROCESS_REVIEWS', data: reviews });
   }
 
   if (request.action === 'RENDER_ANALYSIS') {
     console.log("📊 Получен анализ, сохраняем в storage и отображаем");
-  
+
     chrome.storage.local.set({ review_analysis_result: request.data }, () => {
       insertLoader();
       fillDataFromStorage();
@@ -31,7 +42,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// HTML-шаблон блока анализа
 function getTemplateHtml(): string {
   return `
     <div id="${containerId}">
@@ -218,17 +228,21 @@ function getTemplateHtml(): string {
                   .star-row .bar::after {
                       content: '';
                       position: absolute;
+                      width: var(--filled, 0%);
                       top: 0;
                       left: 0;
                       height: 100%;
                       background: #fff;
                       border-radius: 2px;
                   }
-                  .star-5 .bar::after { width: 50%; }
-                  .star-4 .bar::after { width: 25%; }
-                  .star-3 .bar::after { width: 15%; }
-                  .star-2 .bar::after { width: 5%; }
-                  .star-1 .bar::after { width: 5%; }
+                  .star-5 .bar::after,
+                  .star-4 .bar::after,
+                  .star-3 .bar::after,
+                  .star-2 .bar::after,
+                  .star-1 .bar::after {
+                    width: var(--filled, 0%);
+                  }
+
                   .star-row span:last-child { flex: 0 0 25px; text-align: right; }
                   </style>
               
@@ -370,6 +384,37 @@ function fillAnalysisData(data: any): void {
 
   document.querySelectorAll(".loading-spinner").forEach(spinner => spinner.remove());
   document.querySelectorAll(".blur").forEach(el => el.classList.remove("blur"));
+
+  chrome.storage.local.get("stars_distribution", (result) => {
+    const stars = result.stars_distribution as number[] | undefined;
+
+    if (!stars || stars.length !== 5) {
+      console.warn("Нет данных по звёздам или некорректная структура.");
+      return;
+    }
+
+    const totalStars = stars.reduce((a, b) => a + b, 0);
+    if (totalStars === 0) return;
+
+    const ratingBadge = document.querySelector(".wb-rating-badge");
+    if (ratingBadge) {
+      const weightedSum = stars.reduce((sum, count, i) => sum + count * (i + 1), 0);
+      const averageRating = (weightedSum / totalStars).toFixed(1);
+      ratingBadge.textContent = averageRating;
+    }
+
+    stars.forEach((count, index) => {
+      const percent = Math.round((count / totalStars) * 100);
+      const row = document.querySelector(`.star-${index+1}`); 
+      if (!row) return;
+
+      const bar = row.querySelector(".bar") as HTMLElement;
+      const label = row.querySelector("span:last-child") as HTMLElement;
+
+      if (bar) bar.style.setProperty("--filled", `${percent}%`);
+      if (label) label.textContent = `${percent}%`;
+    });
+  });
 }
 
 
