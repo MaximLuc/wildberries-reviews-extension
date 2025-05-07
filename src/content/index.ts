@@ -22,9 +22,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'RENDER_ANALYSIS') {
+    console.log("📊 Получен анализ, сохраняем в storage и отображаем");
+  
     chrome.storage.local.set({ review_analysis_result: request.data }, () => {
-      console.log("Данные анализа сохранены в storage");
-      fillAnalysisData(request.data);
+      insertLoader();
+      fillDataFromStorage();
     });
   }
 });
@@ -324,9 +326,14 @@ function fillAnalysisData(data: any): void {
 
   const circles = document.querySelectorAll("svg circle");
   if (circles.length >= 4) {
-    (circles[1] as SVGCircleElement).setAttribute("stroke-dasharray", `${posPct} ${100 - posPct}`);
-    (circles[2] as SVGCircleElement).setAttribute("stroke-dasharray", `${neuPct} ${100 - neuPct}`);
-    (circles[3] as SVGCircleElement).setAttribute("stroke-dasharray", `${negPct} ${100 - negPct}`);
+    circles[1].setAttribute("stroke-dasharray", `${posPct} ${100 - posPct}`);
+    circles[1].setAttribute("stroke-dashoffset", "0");
+
+    circles[2].setAttribute("stroke-dasharray", `${neuPct} ${100 - neuPct}`);
+    circles[2].setAttribute("stroke-dashoffset", `-${posPct}`);
+
+    circles[3].setAttribute("stroke-dasharray", `${negPct} ${100 - negPct}`);
+    circles[3].setAttribute("stroke-dashoffset", `-${posPct + neuPct}`);
   }
 
   function setBars(prefix: "week" | "month", selector: string) {
@@ -397,6 +404,10 @@ function fillDataFromStorage() {
     console.log("Данные загружены:", data);
 
     fillAnalysisData(data);
+
+    chrome.storage.local.remove("review_analysis_result", () => {
+      console.log("Хранилище очищено после отрисовки");
+    });
   });
 }
 
@@ -428,7 +439,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 
-setTimeout(() => {
-  insertLoader();
-  fillDataFromStorage();
-}, 1000);
+insertLoader();
+
+let waited = 0;
+const interval = setInterval(() => {
+  const summaryEl = document.querySelector(".wb-summary p");
+
+  if (summaryEl) {
+    clearInterval(interval);
+    console.log("Блок найден, заполняем данными");
+    fillDataFromStorage();
+  } else {
+    waited += 50;
+    if (waited >= 3000) {
+      clearInterval(interval);
+      console.warn("Блок анализа не появился в DOM в течение 3 секунд");
+    }
+  }
+}, 50);
