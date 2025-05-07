@@ -67,10 +67,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     })
       .then((res) => res.json())
       .then((result) => {
-        console.log("✅ Ответ от сервера:", result);
+        console.log("Ответ от сервера:", result);
 
         chrome.storage.local.set({ review_analysis_result: result }, () => {
-          console.log("💾 Результаты сохранены в storage");
+          console.log("Результаты сохранены в storage");
         });
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
           if (tabs[0]?.id) {
