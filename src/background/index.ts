@@ -70,7 +70,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'PROCESS_REVIEWS') {
     console.log("Отправляем отзывы на сервер:", request.data);
 
-    fetch("http://localhost:8000/analyze/", {
+    fetch("http://localhost:8005/analyze/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(request.data),
